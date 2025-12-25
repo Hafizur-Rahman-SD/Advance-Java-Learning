@@ -4,6 +4,8 @@ public class Employee {
     private String name;
     private int id;
     private double basicSalary;
+
+
     public Employee(String name, int id, double basicSalary){
         this.name = name;
         this.id = id;

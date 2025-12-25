@@ -3,7 +3,7 @@ package com.assignment.solid.dsp;
 public class PayPalPayment {
     public void  pay(double amount)
     {
-        System.out.println("Payment Method Payment Method");
+        System.out.println("Payment Method Paypal");
     }
 }
 
