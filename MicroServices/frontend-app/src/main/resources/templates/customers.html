@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Customers</title></head>
+<body>
+<h3>Customer List</h3>
+
+<a href="/ui/register">Register New Customer</a>
+<br/><br/>
+
+<ul>
+    <li th:each="c : ${customers}">
+        <a th:href="@{'/ui/customers/' + ${c.id}}" th:text="${c.name}"></a>
+        &nbsp; | &nbsp;
+        <a th:href="@{'/ui/orders/new?customerId=' + ${c.id}}">Place Order</a>
+    </li>
+</ul>
+
+</body>
+</html>
