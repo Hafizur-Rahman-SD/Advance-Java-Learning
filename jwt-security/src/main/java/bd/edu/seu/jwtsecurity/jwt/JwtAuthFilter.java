@@ -12,8 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -25,10 +23,11 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain)
             throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -42,25 +41,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             Claims claims = jwtService.parseAndValidate(token).getPayload();
+
             String username = claims.getSubject();
+            List<?> roles = claims.get("roles", List.class);
 
-            // Load user (or build auth from claims)
-            UserDetails user = userDetailsService.loadUserByUsername(username);
+            var authorities = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority(role.toString()))
+                    .toList();
 
-            // Optionally use roles from token claims
-            Object rolesObj = claims.get("roles");
-            List<SimpleGrantedAuthority> auths =
-                    (rolesObj instanceof List<?> list)
-                            ? list.stream().map(String::valueOf).map(SimpleGrantedAuthority::new).toList()
-                            : user.getAuthorities().stream().map(a -> new SimpleGrantedAuthority(a.getAuthority())).toList();
+            var authentication =
+                    new UsernamePasswordAuthenticationToken(username, null, authorities);
 
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, auths);
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             chain.doFilter(request, response);
 
         } catch (ExpiredJwtException e) {
-            // Let EntryPoint handle it (401)
             request.setAttribute("jwt_error", "TOKEN_EXPIRED");
             chain.doFilter(request, response);
         } catch (JwtException e) {
