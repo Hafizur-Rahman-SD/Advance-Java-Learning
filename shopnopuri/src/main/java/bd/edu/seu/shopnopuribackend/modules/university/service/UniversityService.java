@@ -10,6 +10,9 @@ import bd.edu.seu.shopnopuribackend.modules.university.dto.CreateDepartmentReque
 import bd.edu.seu.shopnopuribackend.modules.university.dto.CreateUniversityRequest;
 import bd.edu.seu.shopnopuribackend.modules.university.entity.Department;
 import bd.edu.seu.shopnopuribackend.modules.university.entity.University;
+import bd.edu.seu.shopnopuribackend.modules.university.dto.UpdateDepartmentRequest;
+import bd.edu.seu.shopnopuribackend.modules.university.entity.Department;
+
 
 
 import java.util.List;
@@ -146,6 +149,36 @@ public class UniversityService {
         }
         universityRepository.deleteById(id);
     }
+
+
+
+    public DepartmentResponse updateDepartment(Long departmentId, UpdateDepartmentRequest req) {
+        Department d = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Department not found"));
+
+        d.setName(req.getName());
+        d.setCode(req.getCode());
+        d.setGroupName(req.getGroupName());
+        d.setAdmissionRequirements(req.getAdmissionRequirements());
+
+        Department saved = departmentRepository.save(d);
+
+        return new DepartmentResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getCode(),
+                saved.getGroupName(),
+                saved.getAdmissionRequirements()
+        );
+    }
+
+    public void deleteDepartment(Long departmentId) {
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new IllegalArgumentException("Department not found");
+        }
+        departmentRepository.deleteById(departmentId);
+    }
+
 
 
 

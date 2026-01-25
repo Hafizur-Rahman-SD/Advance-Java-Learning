@@ -30,8 +30,19 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
 
-                // authenticated university endpoints (GET/POST/PUT/DELETE সব)
+                // authenticated university endpoints (GET/POST/PUT/DELETE )
                 .requestMatchers("/api/universities/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/departments/**").authenticated()
+
+                // WRITE: ADMIN only
+                .requestMatchers(HttpMethod.POST, "/api/universities/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,  "/api/universities/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE,"/api/universities/**").hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.POST, "/api/departments/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,  "/api/departments/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE,"/api/departments/**").hasRole("ADMIN")
+
 
                 // everything else authenticated
                 .anyRequest().authenticated()
