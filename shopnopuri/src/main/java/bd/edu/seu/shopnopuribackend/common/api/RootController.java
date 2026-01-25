@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 
-//for see universal reult amar app ki cholche ki cholche na dekhar jonno 
+//for see universal reult amar app ki cholche ki cholche na dekhar jonno
 @RestController
 public class RootController {
 

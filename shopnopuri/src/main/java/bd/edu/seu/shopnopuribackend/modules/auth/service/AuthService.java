@@ -3,24 +3,28 @@ package bd.edu.seu.shopnopuribackend.modules.auth.service;
 import bd.edu.seu.shopnopuribackend.modules.auth.dto.AuthResponse;
 import bd.edu.seu.shopnopuribackend.modules.auth.dto.LoginRequest;
 import bd.edu.seu.shopnopuribackend.modules.auth.dto.RegisterRequest;
+import bd.edu.seu.shopnopuribackend.modules.auth.security.JwtService;
 import bd.edu.seu.shopnopuribackend.modules.user.entity.Role;
 import bd.edu.seu.shopnopuribackend.modules.user.entity.User;
 import bd.edu.seu.shopnopuribackend.modules.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
-//Business logic handle reh and login system
+import java.util.Map;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public AuthResponse register(RegisterRequest req) {
@@ -40,18 +44,39 @@ public class AuthService {
 
         User saved = userRepository.save(u);
 
-        return new AuthResponse(saved.getId(), saved.getEmail(), saved.getRole().name(), "Registered successfully");
+        String token = jwtService.generateToken(
+                saved.getEmail(),
+                Map.of("uid", saved.getId(), "role", saved.getRole().name())
+        );
+
+        return new AuthResponse(
+                saved.getId(),
+                saved.getEmail(),
+                saved.getRole().name(),
+                "Registered successfully",
+                token
+        );
     }
 
     public AuthResponse login(LoginRequest req) {
         User u = userRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
-        boolean ok = passwordEncoder.matches(req.getPassword(), u.getPasswordHash());
-        if (!ok) {
+        if (!passwordEncoder.matches(req.getPassword(), u.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid credentials");
         }
 
-        return new AuthResponse(u.getId(), u.getEmail(), u.getRole().name(), "Login successful");
+        String token = jwtService.generateToken(
+                u.getEmail(),
+                Map.of("uid", u.getId(), "role", u.getRole().name())
+        );
+
+        return new AuthResponse(
+                u.getId(),
+                u.getEmail(),
+                u.getRole().name(),
+                "Login successful",
+                token
+        );
     }
 }
