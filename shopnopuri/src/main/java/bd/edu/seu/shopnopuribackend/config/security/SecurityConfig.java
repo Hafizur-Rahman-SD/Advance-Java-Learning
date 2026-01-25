@@ -29,6 +29,10 @@ public class SecurityConfig {
                 .requestMatchers("/", "/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                .requestMatchers("/api/me/profile/**").hasRole("STUDENT")
+                .requestMatchers("/api/prediction/**").hasAnyRole("STUDENT", "ADMIN")
+
+
 
                 // authenticated university endpoints (GET/POST/PUT/DELETE )
                 .requestMatchers("/api/universities/**").authenticated()

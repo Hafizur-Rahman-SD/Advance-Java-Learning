@@ -4,40 +4,36 @@ import bd.edu.seu.shopnopuribackend.modules.profile.dto.ProfileResponse;
 import bd.edu.seu.shopnopuribackend.modules.profile.dto.ProfileUpsertRequest;
 import bd.edu.seu.shopnopuribackend.modules.profile.service.ProfileService;
 import jakarta.validation.Valid;
-import org.springframework.security.core.Authentication;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RestController
-@RequestMapping("/api/profile")
+@RequestMapping("/api/me/profile")
+@RequiredArgsConstructor
 public class ProfileController {
 
     private final ProfileService profileService;
 
-    public ProfileController(ProfileService profileService) {
-        this.profileService = profileService;
-    }
-
-    @GetMapping("/me")
-    public ProfileResponse me(Authentication auth) {
-        return profileService.getMyProfile(auth.getName());
+    @GetMapping
+    public ProfileResponse getMyProfile(Principal principal) {
+        return profileService.getMyProfile(principal.getName());
     }
 
     @PostMapping
-    public ProfileResponse create(Authentication auth, @Valid @RequestBody ProfileUpsertRequest req) {
-        return profileService.createProfile(auth.getName(), req);
+    public ProfileResponse createMyProfile(@Valid @RequestBody ProfileUpsertRequest req, Principal principal) {
+        return profileService.createMyProfile(principal.getName(), req);
     }
 
     @PutMapping
-    public ProfileResponse update(Authentication auth, @Valid @RequestBody ProfileUpsertRequest req) {
-        return profileService.updateProfile(auth.getName(), req);
+    public ProfileResponse updateMyProfile(@Valid @RequestBody ProfileUpsertRequest req, Principal principal) {
+        return profileService.updateMyProfile(principal.getName(), req);
     }
 
     @DeleteMapping
-    public String delete(Authentication auth) {
-        profileService.deleteMyProfile(auth.getName());
-        return "Profile deleted successfully";
+    public String deleteMyProfile(Principal principal) {
+        profileService.deleteMyProfile(principal.getName());
+        return "Profile deleted";
     }
-
-
-
 }
