@@ -25,9 +25,15 @@ public class SecurityConfig {
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
+                // public
                 .requestMatchers("/", "/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+
+                // authenticated university endpoints (GET/POST/PUT/DELETE সব)
+                .requestMatchers("/api/universities/**").authenticated()
+
+                // everything else authenticated
                 .anyRequest().authenticated()
         );
 
