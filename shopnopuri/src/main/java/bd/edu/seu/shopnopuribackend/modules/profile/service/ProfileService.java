@@ -59,6 +59,20 @@ public class ProfileService {
         return toResponse(saved, user.getEmail());
     }
 
+
+    public void deleteMyProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        StudentProfile profile = profileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found"));
+
+        profileRepository.delete(profile);
+    }
+
+
+
+
     private void apply(StudentProfile p, ProfileUpsertRequest req) {
         p.setFullName(req.getFullName());
         p.setPhone(req.getPhone());

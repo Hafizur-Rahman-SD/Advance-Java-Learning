@@ -31,4 +31,13 @@ public class ProfileController {
     public ProfileResponse update(Authentication auth, @Valid @RequestBody ProfileUpsertRequest req) {
         return profileService.updateProfile(auth.getName(), req);
     }
+
+    @DeleteMapping
+    public String delete(Authentication auth) {
+        profileService.deleteMyProfile(auth.getName());
+        return "Profile deleted successfully";
+    }
+
+
+
 }
