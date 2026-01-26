@@ -1,5 +1,4 @@
-package bd.edu.seu.shopnopuribackend.modules.matchmaker;
-
+package bd.edu.seu.shopnopuribackend.modules.matchmaker.controller;
 
 import bd.edu.seu.shopnopuribackend.modules.matchmaker.MatchmakerResponse;
 import bd.edu.seu.shopnopuribackend.modules.matchmaker.MatchmakerService;
@@ -19,4 +18,3 @@ public class MatchmakerController {
         return matchmakerService.suggestByCareer(career);
     }
 }
-

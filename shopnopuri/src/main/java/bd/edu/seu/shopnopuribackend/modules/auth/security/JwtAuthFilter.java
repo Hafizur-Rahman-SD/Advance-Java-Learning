@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,7 +27,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.userRepository = userRepository;
     }
 
-    // Skip JWT filter for public endpoints
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
@@ -45,7 +45,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // No token -> continue
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -54,38 +53,42 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7).trim();
 
         try {
-            // Invalid/expired token -> continue
             if (!jwtService.isTokenValid(token)) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
             String email = jwtService.extractEmail(token);
+            if (email == null || email.isBlank()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-            // If already authenticated -> continue
             if (SecurityContextHolder.getContext().getAuthentication() != null) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
             User user = userRepository.findByEmail(email).orElse(null);
-
-            if (user != null && user.isEnabled()) {
-                var authorities = List.of(
-                        new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
-                );
-
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        user.getEmail(),
-                        null,
-                        authorities
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (user == null || !user.isEnabled()) {
+                filterChain.doFilter(request, response);
+                return;
             }
 
+            var authorities = List.of(
+                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+            );
+
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    user.getEmail(), null, authorities
+            );
+
+            // ✅ important for Spring Security internals
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
         } catch (Exception ex) {
-            // If token parsing fails, just ignore and continue (security will block protected endpoints)
             System.out.println("JWT error: " + ex.getMessage());
         }
 
