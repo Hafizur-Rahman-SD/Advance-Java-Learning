@@ -42,6 +42,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/matchmaker/**").hasAnyRole("STUDENT", "ADMIN")
 
 
+                //match and mematch security
+                .requestMatchers("/api/match/**").hasAnyRole("STUDENT","ADMIN")
+                .requestMatchers("/api/me/match").hasRole("STUDENT")
+
+
+
 
 
 
