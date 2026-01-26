@@ -29,7 +29,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
 
                 // ===== PUBLIC =====
-                .requestMatchers("/", "/health").permitAll()
+                .requestMatchers("/", "/health","/error").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
@@ -77,6 +78,10 @@ public class SecurityConfig {
                 // READ: authenticated (keep your previous behavior)
                 .requestMatchers(HttpMethod.GET, "/api/universities/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/departments/**").authenticated()
+
+                //studyplan
+                .requestMatchers("/api/study-plans/**").hasRole("STUDENT")
+
 
                 // ===== EVERYTHING ELSE =====
                 .anyRequest().authenticated()
