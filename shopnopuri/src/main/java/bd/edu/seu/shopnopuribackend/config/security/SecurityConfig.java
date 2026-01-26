@@ -33,9 +33,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/prediction/**").hasAnyRole("STUDENT", "ADMIN")
 
 
-                //for carrear security 
+                //for carrear security
                 .requestMatchers("/api/career-test/**").hasRole("STUDENT")
                 .requestMatchers("/api/me/career-result").hasRole("STUDENT")
+
+
+                //matchmaker security
+                .requestMatchers("/api/matchmaker/**").hasAnyRole("STUDENT", "ADMIN")
+
 
 
 
