@@ -83,6 +83,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/study-plans/**").hasRole("STUDENT")
 
 
+                //schollership
+                .requestMatchers("/api/admin/scholarships/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/scholarships/**").authenticated()
+
+
+
                 // ===== EVERYTHING ELSE =====
                 .anyRequest().authenticated()
         );

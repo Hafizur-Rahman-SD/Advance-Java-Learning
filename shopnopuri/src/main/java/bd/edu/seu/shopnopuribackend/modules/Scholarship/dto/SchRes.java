@@ -22,5 +22,16 @@ public class SchRes {
     private String url;
     private Instant deadlineAt;
     private boolean act;
+
+
+    private String category;
+    private String district;
+    private String university;
+    private String gender;
+
+    private Double maxGpa;
+    private Integer maxFamilyIncomeBdt;
+
+
 }
 

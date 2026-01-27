@@ -1,6 +1,5 @@
 package bd.edu.seu.shopnopuribackend.modules.Scholarship.service;
 
-
 import bd.edu.seu.shopnopuribackend.modules.Scholarship.dto.*;
 import bd.edu.seu.shopnopuribackend.modules.Scholarship.entity.Sch;
 import bd.edu.seu.shopnopuribackend.modules.Scholarship.entity.SchApp;
@@ -14,6 +13,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -24,9 +24,10 @@ public class SchSvc {
     private final SchSaveRepo saveRepo;
     private final SchAppRepo appRepo;
 
-    // ---------- Public ----------
+    // -------------------- Public (Old) --------------------
     public Page<SchRes> list(String country, int page, int size) {
         Pageable pg = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
         Page<Sch> data = (country == null || country.isBlank())
                 ? schRepo.findByActTrue(pg)
                 : schRepo.findByActTrueAndCountryIgnoreCase(country, pg);
@@ -35,12 +36,33 @@ public class SchSvc {
     }
 
     public SchRes get(Long id) {
-        Sch s = schRepo.findById(id).orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
+        Sch s = schRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
         return toRes(s);
     }
 
-    // ---------- Admin ----------
+    // -------------------- Finder (New) --------------------
+    public Page<SchRes> search(
+            String category, String district, String university, String gender,
+            Double gpa, Integer income,
+            int page, int size
+    ) {
+        Pageable pg = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return schRepo.search(
+                blankToNull(category),
+                blankToNull(district),
+                blankToNull(university),
+                blankToNull(gender),
+                gpa,
+                income,
+                pg
+        ).map(this::toRes);
+    }
+
+    // -------------------- Admin --------------------
     public SchRes create(SchReqC r) {
+        validateDeadline(r.getDeadlineAt());
+
         Sch s = Sch.builder()
                 .title(r.getTitle())
                 .des(r.getDes())
@@ -53,13 +75,22 @@ public class SchSvc {
                 .url(r.getUrl())
                 .deadlineAt(r.getDeadlineAt())
                 .act(r.getAct() == null ? true : r.getAct())
+
+                // Finder fields (merged) - will work if your Sch entity has these fields
+                .category(r.getCategory())
+                .district(r.getDistrict())
+                .university(r.getUniversity())
+                .gender(r.getGender())
+                .maxGpa(r.getMaxGpa())
+                .maxFamilyIncomeBdt(r.getMaxFamilyIncomeBdt())
                 .build();
 
         return toRes(schRepo.save(s));
     }
 
     public SchRes update(Long id, SchReqU r) {
-        Sch s = schRepo.findById(id).orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
+        Sch s = schRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
 
         if (r.getTitle() != null) s.setTitle(r.getTitle());
         if (r.getDes() != null) s.setDes(r.getDes());
@@ -70,24 +101,45 @@ public class SchSvc {
         if (r.getMinGpa() != null) s.setMinGpa(r.getMinGpa());
         if (r.getMinIncomeBdt() != null) s.setMinIncomeBdt(r.getMinIncomeBdt());
         if (r.getUrl() != null) s.setUrl(r.getUrl());
-        if (r.getDeadlineAt() != null) s.setDeadlineAt(r.getDeadlineAt());
+
+        if (r.getDeadlineAt() != null) {
+            validateDeadline(r.getDeadlineAt());
+            s.setDeadlineAt(r.getDeadlineAt());
+        }
+
         if (r.getAct() != null) s.setAct(r.getAct());
+
+        // Finder fields (merged) - will work if your Sch entity has these fields
+        if (r.getCategory() != null) s.setCategory(r.getCategory());
+        if (r.getDistrict() != null) s.setDistrict(r.getDistrict());
+        if (r.getUniversity() != null) s.setUniversity(r.getUniversity());
+        if (r.getGender() != null) s.setGender(r.getGender());
+        if (r.getMaxGpa() != null) s.setMaxGpa(r.getMaxGpa());
+        if (r.getMaxFamilyIncomeBdt() != null) s.setMaxFamilyIncomeBdt(r.getMaxFamilyIncomeBdt());
 
         return toRes(schRepo.save(s));
     }
 
     public void del(Long id) {
-        if (!schRepo.existsById(id)) throw new EntityNotFoundException("Scholarship not found");
+        if (!schRepo.existsById(id)) {
+            throw new EntityNotFoundException("Scholarship not found");
+        }
         schRepo.deleteById(id);
     }
 
-    // ---------- Student: Save ----------
+    // -------------------- Student: Save --------------------
     @Transactional
     public void save(String email, Long schId) {
-        saveRepo.findByStuEmailAndSch_Id(email, schId).ifPresent(x -> { throw new IllegalStateException("Already saved"); });
+        saveRepo.findByStuEmailAndSch_Id(email, schId)
+                .ifPresent(x -> { throw new IllegalStateException("Already saved"); });
 
-        Sch s = schRepo.findById(schId).orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
-        saveRepo.save(SchSave.builder().stuEmail(email).sch(s).build());
+        Sch s = schRepo.findById(schId)
+                .orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
+
+        saveRepo.save(SchSave.builder()
+                .stuEmail(email)
+                .sch(s)
+                .build());
     }
 
     @Transactional
@@ -98,16 +150,22 @@ public class SchSvc {
 
     public List<SchRes> mySaved(String email) {
         return saveRepo.findByStuEmailOrderBySavedAtDesc(email)
-                .stream().map(x -> toRes(x.getSch())).toList();
+                .stream()
+                .map(x -> toRes(x.getSch()))
+                .toList();
     }
 
-    // ---------- Student: Apply ----------
+    // -------------------- Student: Apply --------------------
     @Transactional
     public SchAppRes apply(String email, Long schId, SchAppReq r) {
-        Sch s = schRepo.findById(schId).orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
+        Sch s = schRepo.findById(schId)
+                .orElseThrow(() -> new EntityNotFoundException("Scholarship not found"));
 
         SchApp app = appRepo.findByStuEmailAndSch_Id(email, schId)
-                .orElse(SchApp.builder().stuEmail(email).sch(s).build());
+                .orElse(SchApp.builder()
+                        .stuEmail(email)
+                        .sch(s)
+                        .build());
 
         app.setSt(r.getSt());
         app.setNote(r.getNote());
@@ -136,7 +194,7 @@ public class SchSvc {
                 .toList();
     }
 
-    // ---------- mapper ----------
+    // -------------------- Helpers --------------------
     private SchRes toRes(Sch s) {
         return SchRes.builder()
                 .id(s.getId())
@@ -151,6 +209,24 @@ public class SchSvc {
                 .url(s.getUrl())
                 .deadlineAt(s.getDeadlineAt())
                 .act(s.isAct())
+
+                // Finder fields (merged) - will work if your SchRes has these fields
+                .category(s.getCategory())
+                .district(s.getDistrict())
+                .university(s.getUniversity())
+                .gender(s.getGender())
+                .maxGpa(s.getMaxGpa())
+                .maxFamilyIncomeBdt(s.getMaxFamilyIncomeBdt())
                 .build();
+    }
+
+    private void validateDeadline(Instant deadlineAt) {
+        if (deadlineAt != null && deadlineAt.isBefore(Instant.now())) {
+            throw new IllegalStateException("deadlineAt cannot be in the past");
+        }
+    }
+
+    private String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s;
     }
 }

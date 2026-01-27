@@ -1,9 +1,6 @@
 package bd.edu.seu.shopnopuribackend.modules.Scholarship.controller;
 
-
-import bd.edu.seu.shopnopuribackend.modules.Scholarship.dto.SchReqC;
-import bd.edu.seu.shopnopuribackend.modules.Scholarship.dto.SchReqU;
-import bd.edu.seu.shopnopuribackend.modules.Scholarship.dto.SchRes;
+import bd.edu.seu.shopnopuribackend.modules.Scholarship.dto.*;
 import bd.edu.seu.shopnopuribackend.modules.Scholarship.service.SchSvc;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/sch")
+@RequestMapping("/api/admin/scholarships")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-public class AdmSchCtrl {
+public class AdminScholarshipCtrl {
 
     private final SchSvc svc;
 

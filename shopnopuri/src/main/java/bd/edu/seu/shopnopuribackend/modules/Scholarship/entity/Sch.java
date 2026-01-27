@@ -46,4 +46,16 @@ public class Sch {
     void prePersist() {
         if (createdAt == null) createdAt = Instant.now();
     }
+
+
+
+    // --- Finder fields (NEW) ---
+    private String category;     // MERIT/NEED/STEM etc
+    private String district;     // Dhaka etc
+    private String university;   // SEU/DU etc
+    private String gender;       // MALE/FEMALE/OTHER (null => all)
+
+    private Double maxGpa;       // optional
+    private Integer maxFamilyIncomeBdt; // optional
+
 }
